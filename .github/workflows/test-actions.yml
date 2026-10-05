@@ -1,0 +1,10 @@
+name: Test Actions
+on:
+  push:
+    branches:
+      - geode-720-build
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo OK
