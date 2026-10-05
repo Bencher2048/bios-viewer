@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: geode-sdk/android-launcher
-          ref: main
+          ref: latency-test
           path: geode
 
       - name: Setup Java 21
@@ -35,9 +35,7 @@ jobs:
           s = p.read_text(encoding="utf-8")
 
           pattern = r'''        val maxFrameRate = remember \{\n.*?\n        \}\n\n        SettingsFPSCard'''
-          replacement = '''        val maxFrameRate = remember { 720 }
-
-        SettingsFPSCard'''
+          replacement = '        val maxFrameRate = remember { 720 }\n\n        SettingsFPSCard'
 
           out, count = re.subn(pattern, replacement, s, count=1, flags=re.S)
           if count != 1:
