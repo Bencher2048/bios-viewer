@@ -1,0 +1,64 @@
+name: Build Geode 720 FPS
+
+on:
+  push:
+    branches:
+      - geode-720-build
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Geode Android Launcher
+        uses: actions/checkout@v4
+        with:
+          repository: geode-sdk/android-launcher
+          ref: main
+          path: geode
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+          cache-dependency-path: geode/**/*.gradle*
+
+      - name: Patch max framerate to 720
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path("geode/app/src/main/java/com/geode/launcher/preferences/SettingsActivity.kt")
+          s = p.read_text(encoding="utf-8")
+
+          pattern = r'''        val maxFrameRate = remember \{\n.*?\n        \}\n\n        SettingsFPSCard'''
+          replacement = '''        val maxFrameRate = remember { 720 }
+
+        SettingsFPSCard'''
+
+          out, count = re.subn(pattern, replacement, s, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit(f"Patch failed: matched {count} blocks")
+
+          p.write_text(out, encoding="utf-8")
+          print("Patched:")
+          start = out.index("        val maxFrameRate = remember")
+          print(out[start:start+200])
+          PY
+
+      - name: Build installable debug APK
+        shell: bash
+        run: |
+          cd geode
+          chmod +x ./gradlew
+          ./gradlew app:assembleStandardDebug --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: geode-720fps-apk
+          path: geode/app/build/outputs/apk/standard/debug/app-standard-universal-debug.apk
+          if-no-files-found: error
